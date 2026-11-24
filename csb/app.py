@@ -292,7 +292,11 @@ def main(argv=None):
     parser = argparse.ArgumentParser(prog="claude-session-bots")
     parser.add_argument("--demo", action="store_true", help="show 4 fake sessions cycling through states")
     parser.add_argument("--render", metavar="DIR", help="write panel PNGs to DIR for the pixel check and exit")
+    parser.add_argument("--list", action="store_true", help="print the sessions the widget sees and exit")
     args = parser.parse_args(argv)
+    if args.list:
+        from .listing import run_list
+        return run_list()
     if args.render:
         os.makedirs(args.render, exist_ok=True)
     app = App(demo=args.demo, render_dir=args.render)

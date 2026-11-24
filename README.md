@@ -49,6 +49,15 @@ bin/claude-session-bots --demo
 
 Four fake sessions cycle through the states. Demo mode never sends notifications.
 
+## Check the sessions from the terminal
+
+```
+bin/claude-session-bots --list
+```
+
+Prints the sessions the widget currently sees (project, state, since), oldest first.
+Sessions whose Claude process has exited are left out.
+
 ## Install the Claude Code hooks
 
 The hook script writes one state file per session. It is registered in your
