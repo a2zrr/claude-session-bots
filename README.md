@@ -71,6 +71,25 @@ python3 -m venv --system-site-packages .venv
 .venv/bin/pip install pytest        # only needed to run the tests
 ```
 
+## Quick commands
+
+The widget normally starts by itself at login (see Autostart below). The `bots`
+command is mainly for starting it again after you stopped it, or restarting it after an update.
+
+```
+bots() { systemctl --user "${1:-start}" claude-session-bots; }
+```
+
+- `bots` starts the widget
+- `bots stop` stops it
+- `bots restart` restarts it after an update
+- `bots status` shows whether it's running
+
+To add it, run `python3 scripts/install.py --shell-shortcut`. It appends the function to
+`~/.bashrc`, or to `~/.zshrc` if your shell is zsh. If a `bots` function or alias already
+exists, it says so and changes nothing. You can also paste the line above into that file yourself.
+Open a new terminal afterwards, or run `source ~/.bashrc` (or `~/.zshrc`).
+
 ## Run the demo (no Claude Code needed)
 
 ```

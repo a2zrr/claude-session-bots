@@ -8,6 +8,46 @@ install = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(install)
 
 
+def test_shell_shortcut_bash_adds_function_once(tmp_path, monkeypatch):
+    home = tmp_path / "home"
+    home.mkdir()
+    (home / ".bashrc").write_text("export FOO=1", encoding="utf-8")
+    monkeypatch.setenv("HOME", str(home))
+    monkeypatch.setenv("SHELL", "/bin/bash")
+
+    assert install.main(["--shell-shortcut"]) == 0
+    text = (home / ".bashrc").read_text(encoding="utf-8")
+    assert text.startswith("export FOO=1\n")
+    assert install.BOTS_FUNCTION in text
+    assert not (home / ".zshrc").exists()
+
+    # Second run sees the existing definition and leaves the file alone.
+    assert install.main(["--shell-shortcut"]) == 0
+    assert (home / ".bashrc").read_text(encoding="utf-8") == text
+
+
+def test_shell_shortcut_zsh_skips_existing_alias(tmp_path, monkeypatch):
+    home = tmp_path / "home"
+    home.mkdir()
+    (home / ".zshrc").write_text("alias bots='echo hi'\n", encoding="utf-8")
+    monkeypatch.setenv("HOME", str(home))
+    monkeypatch.setenv("SHELL", "/usr/bin/zsh")
+
+    assert install.main(["--shell-shortcut"]) == 0
+    assert (home / ".zshrc").read_text(encoding="utf-8") == "alias bots='echo hi'\n"
+    assert not (home / ".bashrc").exists()
+
+
+def test_shell_shortcut_creates_zshrc_when_missing(tmp_path, monkeypatch):
+    home = tmp_path / "home"
+    home.mkdir()
+    monkeypatch.setenv("HOME", str(home))
+    monkeypatch.setenv("SHELL", "/usr/bin/zsh")
+
+    assert install.main(["--shell-shortcut"]) == 0
+    assert install.BOTS_FUNCTION in (home / ".zshrc").read_text(encoding="utf-8")
+
+
 def user_hook():
     return {"matcher": "Bash", "hooks": [{"type": "command", "command": "echo mine"}]}
 

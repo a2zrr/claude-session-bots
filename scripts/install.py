@@ -14,6 +14,7 @@ import copy
 import difflib
 import json
 import os
+import re
 import shutil
 import sys
 import time
@@ -67,6 +68,36 @@ def merge(settings, uninstall=False):
     return out
 
 
+BOTS_FUNCTION = 'bots() { systemctl --user "${1:-start}" claude-session-bots; }'
+BOTS_BLOCK = "# claude-session-bots: bots [start|stop|restart|status]\n" + BOTS_FUNCTION + "\n"
+BOTS_DEFINED = re.compile(r"^\s*(function\s+bots\b|bots\s*\(\)|alias\s+bots=)", re.MULTILINE)
+
+
+def shell_rc_path(home=None, shell=None):
+    """Pick the rc file for the user's login shell: zsh gets ~/.zshrc, everything else ~/.bashrc."""
+    home = home or os.path.expanduser("~")
+    shell = os.environ.get("SHELL", "") if shell is None else shell
+    name = ".zshrc" if os.path.basename(shell) == "zsh" else ".bashrc"
+    return os.path.join(home, name)
+
+
+def add_shell_shortcut(home=None, shell=None):
+    """Append the bots() function to the user's rc file. Returns the path, or None if already defined."""
+    path = shell_rc_path(home, shell)
+    text = ""
+    if os.path.exists(path):
+        with open(path, encoding="utf-8") as fh:
+            text = fh.read()
+    if BOTS_DEFINED.search(text):
+        return None
+    if text:
+        text = text if text.endswith("\n") else text + "\n"
+        text += "\n"
+    with open(path, "w", encoding="utf-8") as fh:
+        fh.write(text + BOTS_BLOCK)
+    return path
+
+
 def load(path):
     if not os.path.exists(path):
         return {}
@@ -99,7 +130,17 @@ def main(argv=None):
     parser.add_argument("--settings", default=default_settings_path(), help="settings file to edit")
     parser.add_argument("--uninstall", action="store_true", help="remove only our entries")
     parser.add_argument("--apply", action="store_true", help="write the change (default: dry run)")
+    parser.add_argument("--shell-shortcut", action="store_true",
+                        help="add the bots() command to ~/.bashrc or ~/.zshrc")
     args = parser.parse_args(argv)
+
+    if args.shell_shortcut:
+        path = add_shell_shortcut()
+        if path is None:
+            print(f"A bots command is already defined in {shell_rc_path()}. Nothing changed.")
+        else:
+            print(f"Added bots() to {path}. Open a new terminal, or run: source {path}")
+        return 0
 
     if not args.uninstall and not os.path.exists(HOOK):
         print(f"Hook script not found: {HOOK}", file=sys.stderr)
