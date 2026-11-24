@@ -1,4 +1,15 @@
 #!/bin/sh
-# Launch the widget from the project folder, e.g. bin/claude-session-bots --demo
+# Launch the widget from the project folder, e.g.  bin/claude-session-bots --demo
+#
+# gtk4-layer-shell must be loaded before GTK connects to Wayland, otherwise it
+# reports "not supported" and the widget falls back to a plain window. Preload it here.
 HERE="$(cd "$(dirname "$0")/.." && pwd)"
+if [ -z "$LD_PRELOAD" ]; then
+  for lib in /usr/lib64/libgtk4-layer-shell.so.0 /usr/lib/x86_64-linux-gnu/libgtk4-layer-shell.so.0 /usr/lib/libgtk4-layer-shell.so.0; do
+    if [ -e "$lib" ]; then
+      export LD_PRELOAD="$lib"
+      break
+    fi
+  done
+fi
 exec "$HERE/.venv/bin/python3" -m csb "$@"

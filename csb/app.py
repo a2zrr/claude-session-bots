@@ -69,6 +69,9 @@ class Controller:
         self.window.set_decorated(False)
         self.window.set_resizable(False)
         self.window.set_default_size(1, 1)
+        if not render_dir and not LayerShell.is_supported():
+            print("claude-session-bots: layer-shell not available; using a plain window "
+                  "(corner placement is off). Use bin/claude-session-bots on Niri.", file=sys.stderr)
         if not render_dir and LayerShell.is_supported():
             self.is_layer = True
             LayerShell.init_for_window(self.window)
