@@ -238,7 +238,14 @@ def _render(app_controller, out_dir):
              ("horizontal-1", False, samples[:1]), ("vertical-1", True, samples[:1])]
     panel = app_controller.panel
     window = app_controller.window
+    window.set_visible(True)
     window.present()
+    ctx = GLib.MainContext.default()
+    for _ in range(200):  # wait until the window is mapped and has a renderer
+        if window.get_native() is not None and window.get_native().get_surface() is not None:
+            break
+        ctx.iteration(False)
+        time.sleep(0.01)
     for name, vertical, sess in cases:
         panel.set_data(sess, vertical, "top-right")
         for _ in range(20):
@@ -246,10 +253,12 @@ def _render(app_controller, out_dir):
         paintable = Gtk.WidgetPaintable.new(panel)
         w, h = panel.content_size()
         snap = Gtk.Snapshot()
+        scale = float(os.environ.get("CSB_RENDER_SCALE", "1"))
+        snap.scale(scale, scale)
         paintable.snapshot(snap, w, h)
         node = snap.to_node()
         texture = window.get_native().get_renderer().render_texture(node, None)
-        path = os.path.join(out_dir, f"{name}.png")
+        path = os.path.join(out_dir, f"{name}@{scale:g}x.png")
         texture.save_to_png(path)
         print(path, texture.get_width(), texture.get_height())
 

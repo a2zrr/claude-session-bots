@@ -182,7 +182,8 @@ class Panel(Gtk.Widget):
             rx, ry = x + V_ROBOT[0], y + V_ROBOT[1] + dy
             ix, iy = x + V_IND[0], y + V_IND[1]
             tx = x + V_TEXT_X
-            label_y, name_y = y + 8, y + 22
+            # +1 px over the spec's 8/22: matches the reference's text baseline.
+            label_y, name_y = y + 9, y + 23
             label_w, name_w = V_TEXT_W, V_TEXT_W
             align_center = False
         else:
