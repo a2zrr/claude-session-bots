@@ -12,4 +12,5 @@ if [ -z "$LD_PRELOAD" ]; then
     fi
   done
 fi
+cd "$HERE" || exit 1
 exec "$HERE/.venv/bin/python3" -m csb "$@"
