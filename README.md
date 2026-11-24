@@ -76,15 +76,28 @@ python3 scripts/install_desktop.py
 This writes `~/.local/share/applications/io.github.ClaudeSessionBots.desktop`
 and a 48 px icon. Nothing needs sudo.
 
-## Autostart
+## Autostart (systemd user unit)
 
-_Not set up yet. See the note in the final summary._
+The unit is `packaging/claude-session-bots.service.in`, filled in with the
+project path. It starts with `graphical-session.target` and restarts on failure.
+
+```
+mkdir -p ~/.config/systemd/user
+sed "s|@LAUNCHER@|$PWD/bin/claude-session-bots|" packaging/claude-session-bots.service.in \
+  > ~/.config/systemd/user/claude-session-bots.service
+systemctl --user daemon-reload
+systemctl --user enable --now claude-session-bots.service
+```
+
+Logs: `journalctl --user -u claude-session-bots.service`.
 
 ## Uninstall
 
 ```
 python3 scripts/install.py --uninstall --apply     # remove our hooks only
 python3 scripts/install_desktop.py --uninstall      # remove the desktop entry and icon
+systemctl --user disable --now claude-session-bots.service
+rm -f ~/.config/systemd/user/claude-session-bots.service && systemctl --user daemon-reload
 rm -rf .venv ~/.config/claude-session-bots          # the project venv and saved settings
 ```
 
