@@ -15,8 +15,8 @@ that session is doing, so you don't have to check every terminal.
 
 ![Vertical layout, four sessions, 2×](docs/screenshots/vertical-4@2x.png)
 
-Hover a robot for details, left-click to focus its terminal (Niri), right-click
-for options. Desktop notifications are **off by default**; turn them on with the
+Hover a robot for details. Left-click a Finished robot to mark it as seen (it turns
+Idle); clicks on other robots do nothing. Right-click for options. Desktop notifications are **off by default**; turn them on with the
 **Notifications** switch in the right-click menu.
 
 The spec is in `design/DESIGN.md`. Sprites are in `design/` and generated from
@@ -25,7 +25,7 @@ The spec is in `design/DESIGN.md`. Sprites are in `design/` and generated from
 ## Requirements
 
 Fedora, Wayland. Niri is the main target. GNOME runs the widget as a normal
-undecorated window (no corner placement, no focus-on-click).
+undecorated window (no corner placement).
 
 ```
 sudo dnf install gtk4-layer-shell python3-gobject gtk4 rsms-inter-fonts jetbrains-mono-fonts
@@ -121,7 +121,7 @@ Then delete the project folder if you want the code gone too.
 
 Covers the state model, the session store and sweep rules, the hook script
 (run as a subprocess), the installer merge and uninstall, notifications and
-the Niri window lookup.
+and the click rules.
 
 ## Notes
 

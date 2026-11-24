@@ -185,12 +185,13 @@ Letters match the pixel maps.
   2. 6 × 6 square in the state colour, then the state label.
   3. Message from the hook, for example "Claude needs your permission to use Bash". For the other states: "Done. Waiting for your next prompt.", "Running Bash: npm test" (tool name + short input), "Session open, nothing new".
   4. Path, with `~` for home.
-  5. After a 1 px divider (`rgba(255, 255, 255, 0.08)`, 2 px margin above, 6 px padding below): "Click: open the terminal · Right-click: options".
+  5. After a 1 px divider (`rgba(255, 255, 255, 0.08)`, 2 px margin above, 6 px padding below): "Click: mark as seen · Right-click: options".
 
 ### Click
 
-- Left click focuses that session's terminal (see §10).
-- A Finished session becomes Idle once clicked.
+- Left click on a **Finished** robot marks it as seen: it becomes Idle.
+- Left click on any other robot does nothing.
+- A click never changes the focused window, never focuses a terminal and never moves the user anywhere.
 
 ### Right-click menu
 
@@ -230,8 +231,9 @@ Send a notification when a session **enters** Needs you or Finished. Don't send:
 | Body | hook message | Done. Waiting for your next prompt. |
 | Priority | URGENT | NORMAL |
 | Icon | `needs-0` at 3× (48 px PNG) | `done-0` at 3× |
-| Button | Open terminal → focus terminal | same |
+| Buttons | none | none |
 
+- A click on a notification only dismisses it. There are no buttons and no default action.
 - Use `GNotification`. Install a `.desktop` file whose name matches the application id so the notification daemon or portal accepts it.
 - The daemon draws the notification in its own style. The mockups on the design canvas are only a guide.
 
@@ -314,14 +316,6 @@ GNOME doesn't support layer-shell. Detect that with `Gtk4LayerShell.is_supported
 - At monitor scale 2, one sprite pixel becomes 4 × 4 device pixels.
 - Fractional scales may make a few pixels uneven. That's acceptable.
 
-### Focusing the terminal on Niri
-
-1. Run `niri msg --json windows`.
-2. Find the window whose `pid` is an ancestor of `claude_pid`.
-3. Run `niri msg action focus-window --id <id>`.
-
-On other desktops, do nothing.
-
 ### Autostart
 
 Use a systemd user unit bound to `graphical-session.target`, or a `spawn-at-startup` line in the niri config. Ask the user which.
@@ -334,5 +328,5 @@ Use a systemd user unit bound to `graphical-session.target`, or a `spawn-at-star
 - [ ] Hover tooltip, right-click menu and saved settings all work.
 - [ ] `--demo` shows 4 fake sessions cycling through states without Claude Code.
 - [ ] The hook script and installer work, the installer has `--uninstall`, and `~/.claude/settings.json` is backed up before any change.
-- [ ] Notifications respect the switch. Clicking focuses the terminal on Niri.
+- [ ] Notifications respect the switch. They have no buttons. A click never focuses a window.
 - [ ] pytest passes for the hook script and the state logic.

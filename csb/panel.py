@@ -361,7 +361,7 @@ class Panel(Gtk.Widget):
         divider.set_margin_bottom(6)
         box.append(divider)
 
-        hint = Gtk.Label(label="Click: open the terminal · Right-click: options", xalign=0)
+        hint = Gtk.Label(label="Click: mark as seen · Right-click: options", xalign=0)
         hint.add_css_class("csb-tip-hint")
         box.append(hint)
         return box

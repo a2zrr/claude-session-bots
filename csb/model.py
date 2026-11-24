@@ -66,6 +66,11 @@ def indicator_frame(state, elapsed_ms):
     return _pick(frames, elapsed_ms)[0]
 
 
+def click_result(state):
+    """What a left click does on a robot: a Finished robot becomes Idle, nothing else."""
+    return IDLE if state == DONE else None
+
+
 def elapsed_text(state, since, now):
     """Human text for the tooltip's time column."""
     secs = max(0, now - since)

@@ -8,7 +8,6 @@ from gi.repository import Gio, GLib
 
 from . import model
 
-ACTION_FOCUS = "app.focus"
 NOTIFY_STATES = (model.NEEDS, model.DONE)
 
 
@@ -41,8 +40,6 @@ def build(session, icon_png):
     notif.set_priority(priority)
     if icon_png:
         notif.set_icon(Gio.BytesIcon.new(GLib.Bytes.new(icon_png)))
-    notif.add_button_with_target("Open terminal", ACTION_FOCUS, GLib.Variant("s", session.session_id))
-    notif.set_default_action_and_target(ACTION_FOCUS, GLib.Variant("s", session.session_id))
     return notif
 
 

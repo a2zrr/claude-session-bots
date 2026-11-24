@@ -14,7 +14,7 @@ from gi.repository import Gio, GLib, Gtk  # noqa: E402
 
 from . import model  # noqa: E402
 from .config import Config  # noqa: E402
-from . import focus, notify  # noqa: E402
+from . import notify  # noqa: E402
 from .demo import DemoSource  # noqa: E402
 from .panel import ContextMenu, Panel, install_css  # noqa: E402
 from .sessions import Store, load_session_file, pid_alive, sync  # noqa: E402
@@ -94,9 +94,6 @@ class Controller:
             self._watch_sessions()
         GLib.timeout_add_seconds(SWEEP_S, self._sweep_tick)
         GLib.timeout_add(1000, self._tip_tick)
-        focus_action = Gio.SimpleAction.new("focus", GLib.VariantType.new("s"))
-        focus_action.connect("activate", lambda _a, p: self.on_activate(p.get_string()))
-        app.add_action(focus_action)
         self.relayout()
         self.primed = True  # from now on, state changes may notify
 
@@ -182,13 +179,11 @@ class Controller:
     # ----- actions --------------------------------------------------------
 
     def on_activate(self, session_id):
-        """Left click or notification button: focus the terminal; Finished becomes Idle."""
+        """Left click: only a Finished robot changes (it becomes Idle). Nothing else happens."""
         s = self.store.get(session_id)
-        if s is None:
-            return
-        focus.focus_session(s.claude_pid)
-        if s.state == model.DONE:
-            self.store.set_state(session_id, model.IDLE, time.time())
+        new_state = model.click_result(s.state) if s else None
+        if new_state is not None:
+            self.store.set_state(session_id, new_state, time.time())
             self.on_store_changed()
 
     def on_menu(self, x, y):
