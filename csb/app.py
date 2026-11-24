@@ -14,6 +14,7 @@ from gi.repository import Gio, GLib, Gtk  # noqa: E402
 
 from . import model  # noqa: E402
 from .config import Config  # noqa: E402
+from . import focus, notify  # noqa: E402
 from .demo import DemoSource  # noqa: E402
 from .panel import ContextMenu, Panel, install_css  # noqa: E402
 from .sessions import Store, load_session_file, pid_alive  # noqa: E402
@@ -22,7 +23,6 @@ from .sprites import SpriteSheet  # noqa: E402
 APP_ID = "io.github.ClaudeSessionBots"
 MARGIN = 16
 SWEEP_S = 30
-POLL_MS = 1000
 
 CORNER_EDGES = {
     "top-left": (LayerShell.Edge.TOP, LayerShell.Edge.LEFT),
@@ -60,6 +60,8 @@ class Controller:
         self.panel = None
         self.is_layer = False
         self.demo_mode = demo
+        self.primed = False  # False while start-up sessions load: no notifications then
+        self.prev_states = {}
 
         install_css()
         self.window = Gtk.Window(application=app)
@@ -86,10 +88,14 @@ class Controller:
             self.demo.tick()
             GLib.timeout_add(1000, self._demo_tick)
         else:
-            self._poll()
-            GLib.timeout_add(POLL_MS, self._poll_tick)
+            self._watch_sessions()
         GLib.timeout_add_seconds(SWEEP_S, self._sweep_tick)
+        GLib.timeout_add(1000, self._tip_tick)
+        focus_action = Gio.SimpleAction.new("focus", GLib.VariantType.new("s"))
+        focus_action.connect("activate", lambda _a, p: self.on_activate(p.get_string()))
+        app.add_action(focus_action)
         self.relayout()
+        self.primed = True  # from now on, state changes may notify
 
     # ----- layout ---------------------------------------------------------
 
@@ -121,14 +127,34 @@ class Controller:
         return GLib.SOURCE_CONTINUE
 
     def on_store_changed(self):
+        sessions = self.store.ordered()
+        if self.primed and self.cfg.notifications:
+            for s in notify.entering(self.prev_states, sessions):
+                self.send_notification(s)
+        self.prev_states = notify.snapshot_states(sessions)
         self.relayout()
+
+    def send_notification(self, session):
+        icon_key = "needs-0" if session.state == model.NEEDS else "done-0"
+        notif = notify.build(session, self.sprites.icon_png(icon_key))
+        self.app.send_notification(notify.notification_id(session), notif)
 
     # ----- sources --------------------------------------------------------
 
     def _demo_tick(self):
         self.demo.tick()
+        return GLib.SOURCE_CONTINUE
+
+    def _tip_tick(self):
         self.panel.refresh_tooltip()
         return GLib.SOURCE_CONTINUE
+
+    def _watch_sessions(self):
+        d = sessions_dir()
+        os.makedirs(d, exist_ok=True)
+        self._poll()
+        self.monitor = Gio.File.new_for_path(d).monitor_directory(Gio.FileMonitorFlags.NONE, None)
+        self.monitor.connect("changed", lambda *_: self._poll())
 
     def _poll(self):
         d = sessions_dir()
@@ -146,11 +172,6 @@ class Controller:
         if changed:
             self.on_store_changed()
 
-    def _poll_tick(self):
-        self._poll()
-        self.panel.refresh_tooltip()
-        return GLib.SOURCE_CONTINUE
-
     def _sweep_tick(self):
         if self.store.sweep(time.time(), pid_alive):
             self.on_store_changed()
@@ -159,9 +180,11 @@ class Controller:
     # ----- actions --------------------------------------------------------
 
     def on_activate(self, session_id):
+        """Left click or notification button: focus the terminal; Finished becomes Idle."""
         s = self.store.get(session_id)
         if s is None:
             return
+        focus.focus_session(s.claude_pid)
         if s.state == model.DONE:
             self.store.set_state(session_id, model.IDLE, time.time())
             self.on_store_changed()

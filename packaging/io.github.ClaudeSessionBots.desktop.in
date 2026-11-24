@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Claude sessions
+Comment=Pixel robots showing the state of your Claude Code sessions
+Exec=@LAUNCHER@
+Icon=io.github.ClaudeSessionBots
+Terminal=false
+Categories=Utility;
+StartupNotify=false
+X-GNOME-UsesNotifications=true
