@@ -4,6 +4,3 @@ __pycache__/
 .pytest_cache/
 .claude/settings.local.json
 *.bak
-# Local notes and project instructions (kept on disk only)
-CLAUDE.md
-.claude/
