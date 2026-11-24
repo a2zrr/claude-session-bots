@@ -17,7 +17,7 @@ from .config import Config  # noqa: E402
 from . import focus, notify  # noqa: E402
 from .demo import DemoSource  # noqa: E402
 from .panel import ContextMenu, Panel, install_css  # noqa: E402
-from .sessions import Store, load_session_file, pid_alive  # noqa: E402
+from .sessions import Store, load_session_file, pid_alive, sync  # noqa: E402
 from .sprites import SpriteSheet  # noqa: E402
 
 APP_ID = "io.github.ClaudeSessionBots"
@@ -164,16 +164,14 @@ class Controller:
         d = sessions_dir()
         if not os.path.isdir(d):
             return
-        changed = False
-        now = time.time()
+        found = []
         for name in sorted(os.listdir(d)):
             if not name.endswith(".json"):
                 continue
             sess = load_session_file(os.path.join(d, name))
-            if sess is None:
-                continue
-            changed |= self.store.upsert(sess, now)
-        if changed:
+            if sess is not None:
+                found.append(sess)
+        if sync(self.store, found, time.time()):
             self.on_store_changed()
 
     def _sweep_tick(self):

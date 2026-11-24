@@ -1,7 +1,7 @@
 import json
 
 from csb import model
-from csb.sessions import FINISHED_TO_IDLE_S, Session, Store, load_session_file
+from csb.sessions import FINISHED_TO_IDLE_S, Session, Store, load_session_file, sync
 
 
 def make(sid, state=model.WORK, since=100.0, pid=0):
@@ -66,3 +66,12 @@ def test_load_session_file_valid_and_invalid(tmp_path):
     broken.write_text("{not json")
     assert load_session_file(broken) is None
     assert load_session_file(tmp_path / "missing.json") is None
+
+
+def test_sync_adds_updates_and_removes_missing_files():
+    st = Store()
+    assert sync(st, [make("a"), make("b")], 1)
+    assert not sync(st, [make("a"), make("b")], 2)  # nothing changed
+    assert sync(st, [make("b", state=model.DONE)], 3)  # "a" file gone, "b" changed
+    assert [s.session_id for s in st.ordered()] == ["b"]
+    assert st.get("b").state == model.DONE

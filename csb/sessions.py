@@ -78,6 +78,24 @@ class Store:
         return changed
 
 
+def sync(store, found, now):
+    """Make the store match the session files on disk. Returns True if anything changed.
+
+    `found` is the list of Sessions read from the sessions folder. A session whose
+    file is gone (for example after SessionEnd) is removed at once.
+    """
+    changed = False
+    seen = set()
+    for sess in found:
+        seen.add(sess.session_id)
+        changed |= store.upsert(sess, now)
+    for s in store.ordered():
+        if s.session_id not in seen:
+            store.remove(s.session_id)
+            changed = True
+    return changed
+
+
 def load_session_file(path):
     """Parse one hook-written session file. Returns a Session or None if invalid."""
     try:
