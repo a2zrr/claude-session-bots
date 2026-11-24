@@ -38,6 +38,8 @@ INDICATOR_FRAMES = {
 }
 
 TICK_MS = 100
+DRAG_THRESHOLD_PX = 4  # pointer must move this far before a press becomes a window drag
+ALWAYS_ON_TOP_HINT = "Alt+Space → Always on Top to keep it above other windows"
 MAX_CELLS = 8
 
 

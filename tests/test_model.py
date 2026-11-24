@@ -56,3 +56,8 @@ def test_visible_cells_plus_n_cell():
     assert model.visible_cells(8) == (8, 0)
     assert model.visible_cells(9) == (8, 2)  # 7 sessions + "+2"
     assert model.visible_cells(12) == (8, 5)
+
+
+def test_drag_threshold_and_hint_text():
+    assert model.DRAG_THRESHOLD_PX == 4
+    assert model.ALWAYS_ON_TOP_HINT == "Alt+Space → Always on Top to keep it above other windows"

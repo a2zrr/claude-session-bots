@@ -21,3 +21,10 @@ def test_bad_corner_falls_back(tmp_path):
 
 def test_notifications_default_off(tmp_path):
     assert Config.load(tmp_path / "missing.json").notifications is False
+
+
+def test_hint_seen_defaults_false_and_round_trips(tmp_path):
+    p = tmp_path / "c.json"
+    assert Config.load(p).hint_seen is False
+    Config(hint_seen=True).save(p)
+    assert Config.load(p).hint_seen is True

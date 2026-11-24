@@ -7,9 +7,13 @@ import time
 import gi
 
 gi.require_version("Gtk", "4.0")
-gi.require_version("Gtk4LayerShell", "1.0")
-# gtk4-layer-shell must be loaded before GTK initialises its Wayland display.
-from gi.repository import Gtk4LayerShell as LayerShell  # noqa: E402
+try:
+    # gtk4-layer-shell must be loaded before GTK initialises its Wayland display.
+    # Missing typelib (Ubuntu without gir1.2-gtk4layershell-1.0) falls back to a normal window.
+    gi.require_version("Gtk4LayerShell", "1.0")
+    from gi.repository import Gtk4LayerShell as LayerShell  # noqa: E402
+except (ImportError, ValueError):
+    LayerShell = None
 from gi.repository import Gio, GLib, Gtk  # noqa: E402
 
 from . import model  # noqa: E402
@@ -24,12 +28,12 @@ APP_ID = "io.github.ClaudeSessionBots"
 MARGIN = 16
 SWEEP_S = 30
 
-CORNER_EDGES = {
-    "top-left": (LayerShell.Edge.TOP, LayerShell.Edge.LEFT),
-    "top-right": (LayerShell.Edge.TOP, LayerShell.Edge.RIGHT),
-    "bottom-left": (LayerShell.Edge.BOTTOM, LayerShell.Edge.LEFT),
-    "bottom-right": (LayerShell.Edge.BOTTOM, LayerShell.Edge.RIGHT),
-}
+
+def corner_edges(corner):
+    """The two layer-shell edges for a corner name. Only called when layer-shell is in use."""
+    v = LayerShell.Edge.TOP if corner.startswith("top") else LayerShell.Edge.BOTTOM
+    h = LayerShell.Edge.LEFT if corner.endswith("left") else LayerShell.Edge.RIGHT
+    return v, h
 
 
 def sessions_dir():
@@ -47,7 +51,7 @@ def visible_split(sessions):
 
 
 class Controller:
-    def __init__(self, app, demo, render_dir=None):
+    def __init__(self, app, demo, render_dir=None, no_layer_shell=False):
         self.app = app
         self.cfg = Config.load()
         self.store = Store()
@@ -69,20 +73,26 @@ class Controller:
         self.window.set_decorated(False)
         self.window.set_resizable(False)
         self.window.set_default_size(1, 1)
-        if not render_dir and not LayerShell.is_supported():
-            print("claude-session-bots: layer-shell not available; using a plain window "
-                  "(corner placement is off). Use bin/claude-session-bots on Niri.", file=sys.stderr)
-        if not render_dir and LayerShell.is_supported():
+        wants_layer = not render_dir and not no_layer_shell
+        if wants_layer and LayerShell is None:
+            print("claude-session-bots: gtk4-layer-shell typelib not found; running as a normal window.",
+                  file=sys.stderr)
+        elif wants_layer and not LayerShell.is_supported():
+            print("claude-session-bots: this desktop has no layer-shell (GNOME); running as a normal window.",
+                  file=sys.stderr)
+        if wants_layer and LayerShell is not None and LayerShell.is_supported():
             self.is_layer = True
             LayerShell.init_for_window(self.window)
             LayerShell.set_layer(self.window, LayerShell.Layer.OVERLAY)
             LayerShell.set_keyboard_mode(self.window, LayerShell.KeyboardMode.NONE)
             LayerShell.set_exclusive_zone(self.window, 0)
             LayerShell.set_namespace(self.window, "claude-session-bots")
+        fallback = not self.is_layer
         self.panel = Panel(self.sprites, {
             "on_activate": self.on_activate,
             "on_menu": self.on_menu,
-        })
+            "on_hint_shown": self.on_hint_shown,
+        }, window_drag=fallback, hint_due=fallback and not self.cfg.hint_seen)
         self.window.set_child(self.panel)
         self.apply_corner()
 
@@ -102,7 +112,7 @@ class Controller:
     def apply_corner(self):
         if not self.is_layer:
             return
-        edges = CORNER_EDGES[self.cfg.corner]
+        edges = corner_edges(self.cfg.corner)
         for edge in (LayerShell.Edge.TOP, LayerShell.Edge.BOTTOM,
                      LayerShell.Edge.LEFT, LayerShell.Edge.RIGHT):
             LayerShell.set_anchor(self.window, edge, edge in edges)
@@ -216,21 +226,26 @@ class Controller:
         self.cfg.save()
         self.relayout()
 
+    def on_hint_shown(self):
+        self.cfg.hint_seen = True
+        self.cfg.save()
+
     def set_notifications(self, on):
         self.cfg.notifications = on
         self.cfg.save()
 
 
 class App(Gtk.Application):
-    def __init__(self, demo, render_dir=None):
+    def __init__(self, demo, render_dir=None, no_layer_shell=False):
         super().__init__(application_id=APP_ID, flags=Gio.ApplicationFlags.NON_UNIQUE)
         self.demo = demo
         self.render_dir = render_dir
+        self.no_layer_shell = no_layer_shell
         self.controller = None
 
     def do_activate(self):
         if self.controller is None:
-            self.controller = Controller(self, self.demo, self.render_dir)
+            self.controller = Controller(self, self.demo, self.render_dir, self.no_layer_shell)
             if self.render_dir:
                 GLib.idle_add(render_snapshots, self.controller, self.render_dir)
         self.controller.window.present()
@@ -288,11 +303,13 @@ def main(argv=None):
     parser.add_argument("--demo", action="store_true", help="show 4 fake sessions cycling through states")
     parser.add_argument("--render", metavar="DIR", help="write panel PNGs to DIR for the pixel check and exit")
     parser.add_argument("--list", action="store_true", help="print the sessions the widget sees and exit")
+    parser.add_argument("--no-layer-shell", action="store_true",
+                        help="run as a normal window even where layer-shell exists (for testing the GNOME path)")
     args = parser.parse_args(argv)
     if args.list:
         from .listing import run_list
         return run_list()
     if args.render:
         os.makedirs(args.render, exist_ok=True)
-    app = App(demo=args.demo, render_dir=args.render)
+    app = App(demo=args.demo, render_dir=args.render, no_layer_shell=args.no_layer_shell)
     return app.run(sys.argv[:1])

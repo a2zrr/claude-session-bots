@@ -16,6 +16,7 @@ class Config:
     corner: str = "top-right"
     vertical: bool = False
     notifications: bool = False  # off by default: no desktop notifications
+    hint_seen: bool = False  # the one-time "Always on Top" tooltip hint has been shown
 
     @classmethod
     def load(cls, path=None):
@@ -30,6 +31,7 @@ class Config:
             cfg.corner = data["corner"]
         cfg.vertical = bool(data.get("vertical", cfg.vertical))
         cfg.notifications = bool(data.get("notifications", cfg.notifications))
+        cfg.hint_seen = bool(data.get("hint_seen", cfg.hint_seen))
         return cfg
 
     def save(self, path=None):

@@ -80,10 +80,14 @@ class Panel(Gtk.Widget):
 
     __gtype_name__ = "CsbPanel"
 
-    def __init__(self, sprites, callbacks):
+    def __init__(self, sprites, callbacks, window_drag=False, hint_due=False):
         super().__init__()
         self.sprites = sprites
-        self.cb = callbacks  # on_activate(session_id), on_menu(x, y)
+        self.cb = callbacks  # on_activate(session_id), on_menu(x, y), on_hint_shown()
+        self.hint_due = hint_due  # show the "Always on Top" hint in the next tooltip, once
+        self._tip_hint = False
+        self._drag_origin = (0.0, 0.0)
+        self._dragging = False
         self.sessions = []
         self.overflow = 0
         self.vertical = False
@@ -104,6 +108,13 @@ class Panel(Gtk.Widget):
         click.set_button(0)
         click.connect("released", self._on_click)
         self.add_controller(click)
+
+        if window_drag:  # no layer-shell (GNOME): press and drag anywhere on the panel to move it
+            drag = Gtk.GestureDrag()
+            drag.set_button(Gdk.BUTTON_PRIMARY)
+            drag.connect("drag-begin", self._on_drag_begin)
+            drag.connect("drag-update", self._on_drag_update)
+            self.add_controller(drag)
 
     # ----- data -----------------------------------------------------------
 
@@ -255,6 +266,25 @@ class Panel(Gtk.Widget):
             return
         self.cb["on_activate"](self.cells[idx][1].session_id)
 
+    # ----- window drag (fallback only) ------------------------------------
+
+    def _on_drag_begin(self, _gesture, x, y):
+        self._drag_origin = (x, y)
+        self._dragging = False
+
+    def _on_drag_update(self, gesture, dx, dy):
+        if self._dragging or math.hypot(dx, dy) < model.DRAG_THRESHOLD_PX:
+            return
+        self._dragging = True
+        self._cancel_tip()
+        surface = self.get_native().get_surface()
+        if surface is None:
+            return
+        ox, oy = self._drag_origin
+        # The compositor takes over the pointer and moves the window.
+        surface.begin_move(gesture.get_device(), gesture.get_current_button(),
+                           ox, oy, gesture.get_current_event_time())
+
     # ----- tooltip --------------------------------------------------------
 
     def _cancel_tip(self):
@@ -285,6 +315,10 @@ class Panel(Gtk.Widget):
         self._tip.set_can_focus(False)
         self._tip.add_css_class("csb-tooltip")
         self._tip_session_id = s.session_id
+        self._tip_hint = self.hint_due
+        if self.hint_due:
+            self.hint_due = False
+            self.cb["on_hint_shown"]()
         self._tip.set_child(self._tooltip_content(s))
         self._place_tip(idx)
         self._tip.popup()
@@ -364,6 +398,11 @@ class Panel(Gtk.Widget):
         hint = Gtk.Label(label="Click: mark as seen · Right-click: options", xalign=0)
         hint.add_css_class("csb-tip-hint")
         box.append(hint)
+        if self._tip_hint:
+            tip = Gtk.Label(label=model.ALWAYS_ON_TOP_HINT, xalign=0, wrap=True)
+            tip.set_max_width_chars(34)
+            tip.add_css_class("csb-tip-hint")
+            box.append(tip)
         return box
 
 

@@ -34,6 +34,36 @@ sudo dnf install gtk4-layer-shell python3-gobject gtk4 rsms-inter-fonts jetbrain
 Python 3 with PyGObject and GTK 4. The fonts are optional; the widget falls back
 to other fonts.
 
+### GNOME and other desktops without layer-shell
+
+Without gtk4-layer-shell, or on a desktop that doesn't support it (GNOME), the
+widget runs as an undecorated normal window:
+
+- Press and hold anywhere on the panel, then drag, to move it.
+- Keep it above other windows with Alt+Space, then **Always on Top**. The first
+  tooltip shows this hint once.
+- The corner placement and "Move to corner" are unavailable.
+
+To test this path on Niri: `bin/claude-session-bots --demo --no-layer-shell`.
+
+## Ubuntu
+
+Ubuntu 24.10 or newer is needed for gtk4-layer-shell. Older releases still run
+the widget, as a normal window.
+
+```
+sudo apt install python3-venv python3-gi gir1.2-gtk-4.0 gir1.2-gtk4layershell-1.0 \
+  libgtk4-layer-shell0 fonts-inter fonts-jetbrains-mono
+```
+
+Then set up the project the same way as above (`python3 -m venv --system-site-packages .venv`).
+On GNOME the widget runs as a normal window (see above). On a Niri or other
+layer-shell session it works the same as on Fedora.
+
+The launcher looks for the library in `/usr/lib64`, `/usr/lib/x86_64-linux-gnu`
+and `/usr/lib/aarch64-linux-gnu`, then uses `ldconfig`. If it is missing, it prints
+the install command and still starts the widget as a normal window.
+
 ## Setup
 
 ```

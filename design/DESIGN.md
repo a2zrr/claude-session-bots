@@ -307,7 +307,7 @@ The file contains:
 
 ### GNOME
 
-GNOME doesn't support layer-shell. Detect that with `Gtk4LayerShell.is_supported()`. Then fall back to an undecorated normal window. The user sets it to Always on Top themselves (Alt+Space).
+GNOME doesn't support layer-shell. Detect that with `Gtk4LayerShell.is_supported()`. Then fall back to an undecorated normal window. Press and hold anywhere on the panel, then drag, to move it (the compositor moves the window). The user sets it to Always on Top themselves (Alt+Space). The first tooltip shows "Alt+Space → Always on Top to keep it above other windows" once; the flag `hint_seen` is saved in the config. `--no-layer-shell` forces this path for testing.
 
 ### Drawing
 
