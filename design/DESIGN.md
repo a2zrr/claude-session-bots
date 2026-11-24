@@ -211,7 +211,7 @@ A `Gtk.PopoverMenu` built from a `Gio.Menu` is acceptable if exact styling is im
 
 ### Settings
 
-- Defaults: top right, horizontal, notifications on.
+- Defaults: top right, horizontal, notifications off.
 - Save to `~/.config/claude-session-bots/config.json`.
 
 ## 8. Notifications
@@ -219,7 +219,8 @@ A `Gtk.PopoverMenu` built from a `Gio.Menu` is acceptable if exact styling is im
 Send a notification when a session **enters** Needs you or Finished. Don't send:
 
 - for states that already exist at widget start-up,
-- when notifications are switched off,
+- when notifications are switched off (the default),
+- in `--demo` mode, whatever the switch says,
 - the same transition twice.
 
 | | Needs you | Finished |

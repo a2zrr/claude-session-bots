@@ -131,7 +131,8 @@ class Controller:
 
     def on_store_changed(self):
         sessions = self.store.ordered()
-        if self.primed and self.cfg.notifications:
+        # Demo mode never notifies, whatever the switch says.
+        if self.primed and self.cfg.notifications and not self.demo_mode:
             for s in notify.entering(self.prev_states, sessions):
                 self.send_notification(s)
         self.prev_states = notify.snapshot_states(sessions)

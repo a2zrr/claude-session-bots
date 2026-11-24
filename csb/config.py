@@ -15,7 +15,7 @@ def config_path():
 class Config:
     corner: str = "top-right"
     vertical: bool = False
-    notifications: bool = True
+    notifications: bool = False  # off by default: no desktop notifications
 
     @classmethod
     def load(cls, path=None):

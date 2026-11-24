@@ -16,7 +16,8 @@ that session is doing, so you don't have to check every terminal.
 ![Vertical layout, four sessions, 2×](docs/screenshots/vertical-4@2x.png)
 
 Hover a robot for details, left-click to focus its terminal (Niri), right-click
-for options. Notifications appear when a session needs you or finishes.
+for options. Desktop notifications are **off by default**; turn them on with the
+**Notifications** switch in the right-click menu.
 
 The spec is in `design/DESIGN.md`. Sprites are in `design/` and generated from
 `design/sprites.py`.
@@ -46,7 +47,7 @@ python3 -m venv --system-site-packages .venv
 bin/claude-session-bots --demo
 ```
 
-Four fake sessions cycle through the states. Notifications fire during the demo too.
+Four fake sessions cycle through the states. Demo mode never sends notifications.
 
 ## Install the Claude Code hooks
 
