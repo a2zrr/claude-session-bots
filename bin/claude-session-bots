@@ -1,0 +1,4 @@
+#!/bin/sh
+# Launch the widget from the project folder, e.g. bin/claude-session-bots --demo
+HERE="$(cd "$(dirname "$0")/.." && pwd)"
+exec "$HERE/.venv/bin/python3" -m csb "$@"
